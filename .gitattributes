@@ -1,0 +1,20 @@
+# Store text with LF in the repository and check it out with LF on every
+# platform, so that dotnet format produces the same result on Windows and
+# Linux (03 A5: a formatting difference between hosts is a bug, not a quirk).
+* text=auto eol=lf
+
+# Binary assets: never touch.
+*.png binary
+*.jpg binary
+*.ico binary
+*.vhdx binary
+*.qcow2 binary
+*.img binary
+*.tar.gz binary
+*.zip binary
+
+# Windows-only scripts keep CRLF; powershell.exe 5.1 tolerates LF, but editors
+# on Windows and signed script tooling expect CRLF.
+*.ps1 text eol=crlf
+*.cmd text eol=crlf
+*.bat text eol=crlf

@@ -1,0 +1,17 @@
+# A placeholder. GitHub dispatches a workflow only once a file of this name
+# exists on the default branch, so this stub is what makes the reviewed
+# version on a pull request branch runnable with
+# "gh workflow run dumpcontexts.yml --ref <branch>". It does nothing.
+name: dumpcontexts
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  placeholder:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "placeholder; the real workflow arrives through a reviewed pull request"
