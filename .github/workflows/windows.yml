@@ -1,0 +1,9 @@
+# Registers corpus/windows for workflow_dispatch. A run uses the file on
+# branch corpus/windows, never this one; see the bant-conformance README.
+name: windows
+on: workflow_dispatch
+jobs:
+  registered:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "dispatch with --ref corpus/windows"

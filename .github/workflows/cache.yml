@@ -1,0 +1,9 @@
+# Registers corpus/cache for workflow_dispatch. A run uses the file on
+# branch corpus/cache, never this one; see the bant-conformance README.
+name: cache
+on: workflow_dispatch
+jobs:
+  registered:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "dispatch with --ref corpus/cache"

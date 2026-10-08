@@ -1,0 +1,9 @@
+# Registers corpus/db-disposed-issue_expressions-in-environment-name for workflow_dispatch. A run uses the file on
+# branch corpus/db-disposed-issue_expressions-in-environment-name, never this one; see the bant-conformance README.
+name: db-disposed-issue_expressions-in-environment-name
+on: workflow_dispatch
+jobs:
+  registered:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "dispatch with --ref corpus/db-disposed-issue_expressions-in-environment-name"
