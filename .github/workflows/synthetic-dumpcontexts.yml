@@ -1,0 +1,9 @@
+# Registers corpus/synthetic-dumpcontexts for workflow_dispatch. A run uses the file on
+# branch corpus/synthetic-dumpcontexts, never this one; see the bant-conformance README.
+name: synthetic-dumpcontexts
+on: workflow_dispatch
+jobs:
+  registered:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "dispatch with --ref corpus/synthetic-dumpcontexts"
