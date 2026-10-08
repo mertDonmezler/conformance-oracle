@@ -1,9 +1,35 @@
-# Registers corpus/cachewindowscontainer for workflow_dispatch. A run uses the file on
-# branch corpus/cachewindowscontainer, never this one; see the bant-conformance README.
-name: cachewindowscontainer
-on: workflow_dispatch
+on: [push, workflow_dispatch]
+defaults:
+    run:
+        shell: pwsh
 jobs:
-  registered:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "dispatch with --ref corpus/cachewindowscontainer"
+    createcache:
+        runs-on: windows-latest
+        steps:
+        -   uses: actions/cache@v4
+            id: cache
+            with:
+                path: |
+                    ./.cache
+                key: ${{ runner.os }}-test
+        -   run: |
+                mkdir ./.cache
+                echo Test > ./.cache/Test
+            if: steps.cache.outputs.cache-hit != 'true'
+        -   run: exit 1
+            if: steps.cache.outputs.cache-hit == 'true'
+    hitcache:
+        needs: createcache
+        runs-on: windows-latest
+        steps:
+        -   uses: actions/cache@v4
+            id: cache
+            with:
+                path: |
+                    ./.cache
+                key: ${{ runner.os }}-test
+        -   run: 'ls -l ./.cache'
+        -   run: exit 1
+            if: steps.cache.outputs.cache-hit != 'true'
+        -   run: echo We hit the cache!
+            if: steps.cache.outputs.cache-hit == 'true'
