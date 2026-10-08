@@ -1,9 +1,143 @@
-# Registers corpus/synthetic-dumpcontexts for workflow_dispatch. A run uses the file on
-# branch corpus/synthetic-dumpcontexts, never this one; see the bant-conformance README.
-name: synthetic-dumpcontexts
-on: workflow_dispatch
+# Records what a GitHub-hosted runner looks like from inside a job, so bant
+# can be compared with it field by field. The output is one JSON object in
+# the shape of run-result.v1's "dumpcontexts" (bant-conformance,
+# schemas/run-result.v1.json), uploaded as an artifact.
+#
+# This repository is public, and so are its artifacts. Nothing secret is
+# read: the github context is dumped one field at a time and never whole,
+# github.token is never touched, and the last step refuses to upload output
+# that contains a masked value or anything shaped like a token.
+name: dumpcontexts
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
 jobs:
-  registered:
+  dump:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        part: [1, 2]
+
     steps:
-      - run: echo "dispatch with --ref corpus/synthetic-dumpcontexts"
+      - name: Dump contexts and probe the machine
+        env:
+          # The github context, one field at a time. Never toJSON(github):
+          # the whole object carries github.token.
+          DUMPGH_ACTION: ${{ toJSON(github.action) }}
+          DUMPGH_ACTOR: ${{ toJSON(github.actor) }}
+          DUMPGH_ACTOR_ID: ${{ toJSON(github.actor_id) }}
+          DUMPGH_API_URL: ${{ toJSON(github.api_url) }}
+          DUMPGH_BASE_REF: ${{ toJSON(github.base_ref) }}
+          DUMPGH_EVENT_NAME: ${{ toJSON(github.event_name) }}
+          DUMPGH_EVENT_PATH: ${{ toJSON(github.event_path) }}
+          DUMPGH_GRAPHQL_URL: ${{ toJSON(github.graphql_url) }}
+          DUMPGH_HEAD_REF: ${{ toJSON(github.head_ref) }}
+          DUMPGH_JOB: ${{ toJSON(github.job) }}
+          DUMPGH_PATH: ${{ toJSON(github.path) }}
+          DUMPGH_REF: ${{ toJSON(github.ref) }}
+          DUMPGH_REF_NAME: ${{ toJSON(github.ref_name) }}
+          DUMPGH_REF_PROTECTED: ${{ toJSON(github.ref_protected) }}
+          DUMPGH_REF_TYPE: ${{ toJSON(github.ref_type) }}
+          DUMPGH_REPOSITORY: ${{ toJSON(github.repository) }}
+          DUMPGH_REPOSITORY_ID: ${{ toJSON(github.repository_id) }}
+          DUMPGH_REPOSITORY_OWNER: ${{ toJSON(github.repository_owner) }}
+          DUMPGH_REPOSITORY_OWNER_ID: ${{ toJSON(github.repository_owner_id) }}
+          DUMPGH_REPOSITORYURL: ${{ toJSON(github.repositoryUrl) }}
+          DUMPGH_RETENTION_DAYS: ${{ toJSON(github.retention_days) }}
+          DUMPGH_RUN_ATTEMPT: ${{ toJSON(github.run_attempt) }}
+          DUMPGH_RUN_ID: ${{ toJSON(github.run_id) }}
+          DUMPGH_RUN_NUMBER: ${{ toJSON(github.run_number) }}
+          DUMPGH_SECRET_SOURCE: ${{ toJSON(github.secret_source) }}
+          DUMPGH_SERVER_URL: ${{ toJSON(github.server_url) }}
+          DUMPGH_SHA: ${{ toJSON(github.sha) }}
+          DUMPGH_TRIGGERING_ACTOR: ${{ toJSON(github.triggering_actor) }}
+          DUMPGH_WORKFLOW: ${{ toJSON(github.workflow) }}
+          DUMPGH_WORKFLOW_REF: ${{ toJSON(github.workflow_ref) }}
+          DUMPGH_WORKFLOW_SHA: ${{ toJSON(github.workflow_sha) }}
+          DUMPGH_WORKSPACE: ${{ toJSON(github.workspace) }}
+          # The other contexts hold no credentials, so they are whole.
+          CTX_RUNNER: ${{ toJSON(runner) }}
+          CTX_JOB: ${{ toJSON(job) }}
+          CTX_STRATEGY: ${{ toJSON(strategy) }}
+          CTX_MATRIX: ${{ toJSON(matrix) }}
+          CTX_ENV: ${{ toJSON(env) }}
+        shell: python3 {0}
+        run: |
+          import json, os, subprocess
+
+          def field(name):
+              return json.loads(os.environ[name])
+
+          # A prefix the runner itself never sets, so nothing but the fields
+          # named above can land in the github section.
+          github = {
+              key[len("DUMPGH_"):].lower(): field(key)
+              for key in sorted(os.environ)
+              if key.startswith("DUMPGH_")
+          }
+          # repositoryUrl keeps GitHub's spelling.
+          github["repositoryUrl"] = github.pop("repositoryurl")
+
+          probes = {}
+          for name, command in [
+              ("whoami", "whoami"),
+              ("id", "id"),
+              ("pwd", "pwd"),
+              ("home", "echo $HOME"),
+              ("df", "df -h / /mnt"),
+              ("mounts", "mount | grep -E ' / | /mnt '"),
+              ("docker_server_version", "docker info --format '{{.ServerVersion}}'"),
+              ("sudo", "sudo -n true && echo SUDO_OK"),
+              ("hostedtoolcache", "ls /opt/hostedtoolcache"),
+              ("node", "node --version"),
+              ("python3", "python3 --version"),
+              ("go", "go version"),
+              ("ulimit_n", "ulimit -n"),
+              ("nproc", "nproc"),
+              ("free_g", "free -g"),
+              ("image_os", "echo $ImageOS"),
+              ("image_version", "echo $ImageVersion"),
+          ]:
+              done = subprocess.run(["bash", "-c", command], capture_output=True, text=True)
+              probes[name] = (done.stdout + done.stderr).strip()
+
+          dump = {
+              "github": github,
+              "runner": field("CTX_RUNNER"),
+              "job": field("CTX_JOB"),
+              "strategy": field("CTX_STRATEGY"),
+              "matrix": field("CTX_MATRIX"),
+              "env": field("CTX_ENV"),
+              "probes": probes,
+          }
+
+          with open("dumpcontexts.json", "w", encoding="utf-8") as out:
+              json.dump(dump, out, indent=2, sort_keys=True)
+
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write("## dumpcontexts, part " + str(dump["matrix"]["part"]) + "\n\n")
+              summary.write("| probe | value |\n|---|---|\n")
+              for name, value in probes.items():
+                  summary.write("| " + name + " | `" + value.replace("\n", " / ").replace("|", "\\|") + "` |\n")
+
+      - name: Refuse to publish anything masked or token-shaped
+        # The artifact is public. A masked value ("***") means a secret
+        # reached the output; a token shape means one might have unmasked.
+        run: |
+          if grep -n '\*\*\*' dumpcontexts.json; then
+            echo "dumpcontexts.json contains a masked value; not uploading"; exit 1
+          fi
+          if grep -nE '(ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.' dumpcontexts.json; then
+            echo "dumpcontexts.json contains a token-shaped string; not uploading"; exit 1
+          fi
+
+      - name: Upload
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: dumpcontexts-${{ matrix.part }}
+          path: dumpcontexts.json
+          if-no-files-found: error
