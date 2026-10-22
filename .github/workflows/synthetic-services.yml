@@ -1,9 +1,29 @@
-# Registers corpus/synthetic-services for workflow_dispatch. A run uses the file on
-# branch corpus/synthetic-services, never this one; see the bant-conformance README.
+# A postgres service container that the job waits for through its health
+# check, then reaches on the mapped port.
 name: synthetic-services
-on: workflow_dispatch
+
+on: [push, workflow_dispatch]
+
+permissions:
+  contents: read
+
 jobs:
-  registered:
+  database:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: conformance
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
-      - run: echo "dispatch with --ref corpus/synthetic-services"
+      - name: Query the service
+        env:
+          PGPASSWORD: conformance
+        run: psql -h localhost -U postgres -c "select 1 as ready"
