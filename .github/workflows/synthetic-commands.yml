@@ -1,9 +1,35 @@
-# Registers corpus/synthetic-commands for workflow_dispatch. A run uses the file on
-# branch corpus/synthetic-commands, never this one; see the bant-conformance README.
+# The workflow commands a step can issue. The masked value is a fixed,
+# harmless string: masking is what is being checked, not secrecy.
 name: synthetic-commands
-on: workflow_dispatch
+
+on: [push, workflow_dispatch]
+
+permissions:
+  contents: read
+
 jobs:
-  registered:
+  commands:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "dispatch with --ref corpus/synthetic-commands"
+      - name: Set an output
+        id: set
+        run: echo "answer=42" >> "$GITHUB_OUTPUT"
+
+      - name: Use the output
+        run: test "${{ steps.set.outputs.answer }}" = 42
+
+      - name: Write a step summary
+        run: |
+          echo "## Conformance summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "answer is ${{ steps.set.outputs.answer }}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Annotations
+        run: |
+          echo "::notice title=conformance::a notice"
+          echo "::warning file=README.md,line=1::a warning"
+          echo "::error title=conformance::an error that does not fail the step"
+
+      - name: Mask a value
+        run: |
+          echo "::add-mask::conformance-masked-value"
+          echo "after masking: conformance-masked-value"
