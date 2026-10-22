@@ -1,9 +1,32 @@
-# Registers corpus/synthetic-job-outputs for workflow_dispatch. A run uses the file on
-# branch corpus/synthetic-job-outputs, never this one; see the bant-conformance README.
+# A value produced in one job and read in a later one, through a step
+# output, a job output and the needs context.
 name: synthetic-job-outputs
-on: workflow_dispatch
+
+on: [push, workflow_dispatch]
+
+permissions:
+  contents: read
+
 jobs:
-  registered:
+  produce:
     runs-on: ubuntu-latest
+    outputs:
+      colour: ${{ steps.pick.outputs.colour }}
+      count: ${{ steps.pick.outputs.count }}
     steps:
-      - run: echo "dispatch with --ref corpus/synthetic-job-outputs"
+      - name: Pick values
+        id: pick
+        run: |
+          echo "colour=teal" >> "$GITHUB_OUTPUT"
+          echo "count=3" >> "$GITHUB_OUTPUT"
+
+  consume:
+    runs-on: ubuntu-latest
+    needs: produce
+    steps:
+      - name: Read them back
+        run: |
+          echo "colour=${{ needs.produce.outputs.colour }}"
+          echo "count=${{ needs.produce.outputs.count }}"
+          test "${{ needs.produce.outputs.colour }}" = teal
+          test "${{ needs.produce.outputs.count }}" = 3
