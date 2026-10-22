@@ -1,9 +1,21 @@
-# Registers corpus/synthetic-container for workflow_dispatch. A run uses the file on
-# branch corpus/synthetic-container, never this one; see the bant-conformance README.
+# The whole job runs inside node:20, started with extra docker options.
 name: synthetic-container
-on: workflow_dispatch
+
+on: [push, workflow_dispatch]
+
+permissions:
+  contents: read
+
 jobs:
-  registered:
+  inside:
     runs-on: ubuntu-latest
+    container:
+      image: node:20
+      options: --cpus 1 --env CONFORMANCE=container
     steps:
-      - run: echo "dispatch with --ref corpus/synthetic-container"
+      - name: Report the container
+        run: |
+          node --version
+          echo "CONFORMANCE=$CONFORMANCE"
+          test "$CONFORMANCE" = container
+          test -f /.dockerenv
