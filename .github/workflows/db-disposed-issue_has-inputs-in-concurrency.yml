@@ -1,9 +1,11 @@
-# Registers corpus/db-disposed-issue_has-inputs-in-concurrency for workflow_dispatch. A run uses the file on
-# branch corpus/db-disposed-issue_has-inputs-in-concurrency, never this one; see the bant-conformance README.
-name: db-disposed-issue_has-inputs-in-concurrency
-on: workflow_dispatch
+on: 
+  workflow_dispatch:
+  push:
+  workflow_call:
+name: has-inputs-in-concurrency
+concurrency: ${{github.run_id}}-${{inputs == null}}
 jobs:
-  registered:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "dispatch with --ref corpus/db-disposed-issue_has-inputs-in-concurrency"
+ a:
+  runs-on: ubuntu-latest
+  steps:
+  - run: echo Ok
