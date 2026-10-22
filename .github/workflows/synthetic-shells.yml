@@ -1,9 +1,33 @@
-# Registers corpus/synthetic-shells for workflow_dispatch. A run uses the file on
-# branch corpus/synthetic-shells, never this one; see the bant-conformance README.
+# One step per shell, all run in a default working directory.
 name: synthetic-shells
-on: workflow_dispatch
+
+on: [push, workflow_dispatch]
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: /tmp
+
 jobs:
-  registered:
+  shells:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "dispatch with --ref corpus/synthetic-shells"
+      - name: bash
+        shell: bash
+        run: echo "bash in $(pwd) with ${BASH_VERSINFO[0]}"
+
+      - name: sh
+        shell: sh
+        run: echo "sh in $(pwd)"
+
+      - name: python
+        shell: python
+        run: |
+          import os
+          print("python in", os.getcwd())
+
+      - name: pwsh
+        shell: pwsh
+        run: Write-Output "pwsh in $(Get-Location)"
