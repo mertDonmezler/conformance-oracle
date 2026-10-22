@@ -1,9 +1,20 @@
-# Registers corpus/synthetic-concurrency for workflow_dispatch. A run uses the file on
-# branch corpus/synthetic-concurrency, never this one; see the bant-conformance README.
+# A run in a named concurrency group, with a job in a group of its own.
 name: synthetic-concurrency
-on: workflow_dispatch
+
+on: [push, workflow_dispatch]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: synthetic-concurrency-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  registered:
+  serial:
     runs-on: ubuntu-latest
+    concurrency:
+      group: synthetic-concurrency-job-${{ github.ref }}
     steps:
-      - run: echo "dispatch with --ref corpus/synthetic-concurrency"
+      - name: Run in the group
+        run: echo "in group synthetic-concurrency-${{ github.ref }}"
