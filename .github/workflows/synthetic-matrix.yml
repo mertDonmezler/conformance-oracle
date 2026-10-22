@@ -1,0 +1,9 @@
+# Registers corpus/synthetic-matrix for workflow_dispatch. A run uses the file on
+# branch corpus/synthetic-matrix, never this one; see the bant-conformance README.
+name: synthetic-matrix
+on: workflow_dispatch
+jobs:
+  registered:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "dispatch with --ref corpus/synthetic-matrix"

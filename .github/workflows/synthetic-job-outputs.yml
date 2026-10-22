@@ -1,0 +1,9 @@
+# Registers corpus/synthetic-job-outputs for workflow_dispatch. A run uses the file on
+# branch corpus/synthetic-job-outputs, never this one; see the bant-conformance README.
+name: synthetic-job-outputs
+on: workflow_dispatch
+jobs:
+  registered:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "dispatch with --ref corpus/synthetic-job-outputs"

@@ -1,0 +1,9 @@
+# Registers corpus/synthetic-env-contexts for workflow_dispatch. A run uses the file on
+# branch corpus/synthetic-env-contexts, never this one; see the bant-conformance README.
+name: synthetic-env-contexts
+on: workflow_dispatch
+jobs:
+  registered:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "dispatch with --ref corpus/synthetic-env-contexts"

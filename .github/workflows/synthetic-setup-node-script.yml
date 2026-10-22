@@ -1,0 +1,9 @@
+# Registers corpus/synthetic-setup-node-script for workflow_dispatch. A run uses the file on
+# branch corpus/synthetic-setup-node-script, never this one; see the bant-conformance README.
+name: synthetic-setup-node-script
+on: workflow_dispatch
+jobs:
+  registered:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "dispatch with --ref corpus/synthetic-setup-node-script"
