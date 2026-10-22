@@ -1,9 +1,18 @@
-# Registers corpus/synthetic-permissions-token for workflow_dispatch. A run uses the file on
-# branch corpus/synthetic-permissions-token, never this one; see the bant-conformance README.
+# A job with read-only permissions calls the API with GITHUB_TOKEN. The
+# token is never printed; only fields of the public repository are.
 name: synthetic-permissions-token
-on: workflow_dispatch
+
+on: [push, workflow_dispatch]
+
+permissions: {}
+
 jobs:
-  registered:
+  api:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - run: echo "dispatch with --ref corpus/synthetic-permissions-token"
+      - name: Read the repository through the API
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh api "repos/$GITHUB_REPOSITORY" --jq '.full_name + " " + .visibility'
