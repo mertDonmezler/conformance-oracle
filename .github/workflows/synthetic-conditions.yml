@@ -1,9 +1,37 @@
-# Registers corpus/synthetic-conditions for workflow_dispatch. A run uses the file on
-# branch corpus/synthetic-conditions, never this one; see the bant-conformance README.
+# Which steps run after a failure: a step that fails but is allowed to,
+# then a step that fails for real, then the success(), failure() and
+# always() steps that follow it. The job fails, as it should.
 name: synthetic-conditions
-on: workflow_dispatch
+
+on: [push, workflow_dispatch]
+
+permissions:
+  contents: read
+
 jobs:
-  registered:
+  decide:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - run: echo "dispatch with --ref corpus/synthetic-conditions"
+      - name: Allowed to fail
+        continue-on-error: true
+        run: exit 3
+
+      - name: Runs because the failure above was allowed
+        run: echo "still going"
+
+      - name: Fails the job
+        run: exit 1
+
+      - name: Skipped after a failure
+        if: success()
+        run: echo "not printed"
+
+      - name: Runs on failure
+        if: failure()
+        run: echo "a step failed"
+
+      - name: Runs always
+        if: always()
+        timeout-minutes: 1
+        run: echo "always runs"
