@@ -1,9 +1,28 @@
-# Registers corpus/synthetic-setup-node-script for workflow_dispatch. A run uses the file on
-# branch corpus/synthetic-setup-node-script, never this one; see the bant-conformance README.
+# setup-node asked for a version the image carries in its tool cache, then
+# a script run by github-script. Neither calls the API.
 name: synthetic-setup-node-script
-on: workflow_dispatch
+
+on: [push, workflow_dispatch]
+
+permissions:
+  contents: read
+
 jobs:
-  registered:
+  node:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "dispatch with --ref corpus/synthetic-setup-node-script"
+      - name: Set up Node from the tool cache
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 20
+
+      - name: Report Node
+        run: |
+          node --version
+          which node
+
+      - name: github-script
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            core.info(`event ${context.eventName} on ${context.repo.owner}/${context.repo.repo}`)
