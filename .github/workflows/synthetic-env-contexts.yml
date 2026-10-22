@@ -1,9 +1,48 @@
-# Registers corpus/synthetic-env-contexts for workflow_dispatch. A run uses the file on
-# branch corpus/synthetic-env-contexts, never this one; see the bant-conformance README.
+# env set at the workflow, job and step levels, the innermost winning, and
+# the contexts printed one field at a time. Never toJSON(github): the whole
+# object carries github.token, and this repository is public.
 name: synthetic-env-contexts
-on: workflow_dispatch
+
+on: [push, workflow_dispatch]
+
+permissions:
+  contents: read
+
+env:
+  LEVEL: workflow
+  ONLY_WORKFLOW: from-workflow
+
 jobs:
-  registered:
+  levels:
     runs-on: ubuntu-latest
+    env:
+      LEVEL: job
+      ONLY_JOB: from-job
     steps:
-      - run: echo "dispatch with --ref corpus/synthetic-env-contexts"
+      - name: Step level wins
+        id: first
+        env:
+          LEVEL: step
+        run: |
+          echo "LEVEL=$LEVEL ONLY_WORKFLOW=$ONLY_WORKFLOW ONLY_JOB=$ONLY_JOB"
+          test "$LEVEL" = step
+          echo "seen=yes" >> "$GITHUB_OUTPUT"
+
+      - name: Job level without a step value
+        run: |
+          echo "LEVEL=$LEVEL"
+          test "$LEVEL" = job
+
+      - name: Contexts, one field at a time
+        run: |
+          echo "github.event_name=${{ github.event_name }}"
+          echo "github.ref_type=${{ github.ref_type }}"
+          echo "github.repository=${{ github.repository }}"
+          echo "github.server_url=${{ github.server_url }}"
+          echo "github.workflow=${{ github.workflow }}"
+          echo "job.status=${{ job.status }}"
+          echo "runner.os=${{ runner.os }}"
+          echo "runner.arch=${{ runner.arch }}"
+          echo "runner.environment=${{ runner.environment }}"
+          echo "steps.first.outputs.seen=${{ steps.first.outputs.seen }}"
+          echo "steps.first.outcome=${{ steps.first.outcome }}"
