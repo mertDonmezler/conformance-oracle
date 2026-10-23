@@ -1,9 +1,29 @@
-# Registers corpus/synthetic-matrix for workflow_dispatch. A run uses the file on
-# branch corpus/synthetic-matrix, never this one; see the bant-conformance README.
+# One job expanded by a matrix: two values times two values, one combination
+# excluded, one added by include, at most two at a time, and no cancelling
+# when a combination fails.
 name: synthetic-matrix
-on: workflow_dispatch
+
+on: [push, workflow_dispatch]
+
+permissions:
+  contents: read
+
 jobs:
-  registered:
+  combine:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        os-name: [alpha, beta]
+        level: [1, 2]
+        exclude:
+          - os-name: beta
+            level: 2
+        include:
+          - os-name: gamma
+            level: 3
+            extra: added
     steps:
-      - run: echo "dispatch with --ref corpus/synthetic-matrix"
+      - name: Report the combination
+        run: echo "name=${{ matrix.os-name }} level=${{ matrix.level }} extra=${{ matrix.extra }}"
